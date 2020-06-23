@@ -31,7 +31,6 @@ class _AdskyiColorPickerState extends State<AdskyiColorPicker> {
                   showLabel: true,
                   enableAlpha: false,
                   displayThumbColor: false,
-                  paletteType: PaletteType.hsv,
                 ),
               ],
             ),

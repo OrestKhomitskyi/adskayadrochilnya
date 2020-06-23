@@ -11,6 +11,7 @@ import 'package:adskaya_drochilnya/ui/connection_off_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'dart:convert' show utf8;
+import 'dart:convert' show ascii;
 
 class AdskyiApp extends StatefulWidget {
   @override
@@ -35,7 +36,15 @@ class _AdskyiAppState extends State<AdskyiApp> {
   double speed = 10;
   bool active = false;
   int mode = -1;
-  List<String> modes = [];
+  List<String> modes = [
+    "Поймай меня",
+    "Змейка",
+    "Радуга",
+    "Метеор",
+    "Мерцание",
+    "Обычный",
+    "Плавный переход"
+  ];
 
   startScan() {
     setState(() {
@@ -99,13 +108,11 @@ class _AdskyiAppState extends State<AdskyiApp> {
         service.characteristics.forEach((ch) {
           if (ch.uuid.toString() == CHARACTERISTIC_UUID) {
             characteristic = ch;
-            writeData('3');
             setState(() {
               connectionText =
                   "Characteristic R. All ready with device: ${device.name}";
             });
             setupListeners();
-            getInfo();
           }
         });
       }
@@ -117,73 +124,7 @@ class _AdskyiAppState extends State<AdskyiApp> {
     await characteristic.setNotifyValue(true);
     characteristic.value.listen((event) {
       var parsed = utf8.decode(event);
-      if (parsed.startsWith('M')) {
-        var parsedMode = parsed.split('');
-        parsedMode.removeAt(0);
-        var parsedString = parsedMode.join('');
-        setState(() {
-          if (modes.contains(parsedString) == false) {
-            modes.add(parsedString);
-          }
-        });
-      }
 
-      if (parsed == "SPOWERON") {
-        setState(() {
-          active = true;
-        });
-      }
-      if (parsed == "SPOWEROFF") {
-        setState(() {
-          active = false;
-        });
-      }
-      if (parsed.startsWith("SMODE")) {
-        var value = int.tryParse(parsed.substring(5), radix: 10);
-        setState(() {
-          mode = value ?? -1;
-        });
-      }
-
-      if (parsed.startsWith("SBRIGHT")) {
-        var value = int.tryParse(parsed.substring(7), radix: 10);
-        setState(() {
-          brightness = value / 2.55;
-        });
-      }
-
-      if (parsed.startsWith("SSPEED")) {
-        var value = int.tryParse(parsed.substring(6), radix: 10);
-        setState(() {
-          speed = value / 1.0;
-        });
-      }
-
-      if (parsed.startsWith("SR")) {
-        var value = int.tryParse(parsed.substring(2), radix: 10);
-
-        setState(() {
-          color = Color.fromRGBO(value, color.green, color.blue, 1);
-        });
-      }
-
-      if (parsed.startsWith("SG")) {
-        var value = int.tryParse(parsed.substring(2), radix: 10);
-
-        setState(() {
-          color = Color.fromRGBO(color.red, value, color.blue, 1);
-        });
-      }
-
-      if (parsed.startsWith("SB")) {
-        var value = int.tryParse(parsed.substring(2), radix: 10);
-
-        setState(() {
-          color = Color.fromRGBO(color.red, color.green, value, 1);
-        });
-      }
-
-      print('Receive: ');
       if (parsed != "") {
         print(parsed);
       }
@@ -193,24 +134,8 @@ class _AdskyiAppState extends State<AdskyiApp> {
   writeData(String data) async {
     if (device == null) return;
     print('Send: ' + data);
-    List<int> bytes = utf8.encode(data);
-    await characteristic.write(bytes, withoutResponse: true);
-  }
-
-  getInfo() async {
-    writeData('1');
-    setState(() {
-      connectionText = "Received status of module";
-    });
-    await Future.delayed(Duration(seconds: 2));
-    setState(() {
-      connectionText = "Getting modes of module";
-    });
-
-    writeData('2');
-    setState(() {
-      connectionText = "Receiving modes of module";
-    });
+    List<int> bytes = ascii.encode(data + '\n');
+    characteristic.write(bytes, withoutResponse: true);
   }
 
   String calculateByteValue(double sliderValue) {
@@ -222,60 +147,34 @@ class _AdskyiAppState extends State<AdskyiApp> {
   Widget getConnectedUI(BuildContext context) {
     return Column(
       children: <Widget>[
-        AdskyiSwitch(
-          label: 'Увімкнути',
-          value: active,
-          onChange: (value) async {
+        RaisedButton(
+          child: Text('Увімкнути/Вимкнути'),
+          onPressed: () async {
             writeData('3');
           },
         ),
-        RaisedButton(
-          child: Text('Перезагрузити модуль'),
-          onPressed: () {
-            writeData('5');
-          },
-          color: Colors.red,
-        ),
+        // RaisedButton(
+        //   child: Text('Перезагрузити модуль'),
+        //   onPressed: () {
+        //     writeData('5');
+        //   },
+        //   color: Colors.red,
+        // ),
         AdskyiSlider(
           value: brightness,
           label: 'Регулювання освітлення',
           onChange: (value) {
+            brightness = value;
             debouncer.run(() {
-              brightness = value;
-              writeData('9 ' + calculateByteValue(value));
+              writeData('7 ' + calculateByteValue(value));
             });
-          },
-        ),
-        AdskyiSlider(
-          value: speed,
-          label: 'Регулювання швидкості',
-          min: 1,
-          max: 15,
-          onChange: (value) async {
-            debouncer.run(() {
-              writeData('6 ' + (value).toStringAsFixed(0));
-            });
-            print(value);
           },
         ),
         AdskyiColorPicker(
           value: Colors.yellow,
           onChange: (Color color) {
-            writeData("4 ${color.red} ${color.green} ${color.blue}");
-          },
-        ),
-        RaisedButton(
-          child: Text('Статус'),
-          onPressed: () async {
-            getInfo();
-            // showDialog(
-            //     context: context,
-            //     builder: (BuildContext context) {
-            //       return AlertDialog(
-            //         title: Text("Статус"),
-            //         content: Text("Харчування: ${active}"),
-            //       );
-            //     });
+            writeData(
+                "4 ${color.red.toString().padLeft(3, '0')} ${color.green.toString().padLeft(3, '0')} ${color.blue.toString().padLeft(3, '0')}");
           },
         ),
         AdskyiRadio(
@@ -314,8 +213,6 @@ class _AdskyiAppState extends State<AdskyiApp> {
   void initState() {
     super.initState();
     checkDevice();
-
-    //Timer.periodic(Duration(seconds: 10), (Timer t) => writeData('1'));
   }
 
   @override

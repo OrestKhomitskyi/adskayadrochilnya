@@ -17,24 +17,33 @@ class _AdskyiRadioState extends State<AdskyiRadio> {
   Widget build(BuildContext context) {
     return Container(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Text(widget.label),
           ...widget.modes.map((e) {
             int index = widget.modes.indexOf(e);
             bool isMatch = index == widget.value;
-            return Row(children: <Widget>[
-              Radio(
-                value: isMatch,
-                groupValue: true,
-                onChanged: (value) {
-                  setState(() {
-                    widget.value = index;
-                    widget.onChange(index);
-                  });
-                },
-              ),
-              Text(e)
-            ]);
+            return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text(e),
+                    onPressed: () {
+                      widget.onChange(index);
+                    },
+                  )
+                  // Radio(
+                  //   value: isMatch,
+                  //   groupValue: true,
+                  //   onChanged: (value) {
+                  //     setState(() {
+                  //       widget.value = index;
+                  //       widget.onChange(index);
+                  //     });
+                  //   },
+                  // ),
+                  // Text(e)
+                ]);
           }).toList()
         ],
       ),

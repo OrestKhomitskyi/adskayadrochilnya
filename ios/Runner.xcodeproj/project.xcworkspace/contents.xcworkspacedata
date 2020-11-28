@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:/Users/orestkhomitskyi/Documents/flutter/adskaya_drochilnya/ios/Runner.xcodeproj">
+      location = "group:Runner.xcodeproj">
    </FileRef>
 </Workspace>

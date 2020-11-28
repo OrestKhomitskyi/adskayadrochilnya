@@ -1,4 +1,4 @@
-package com.example.adskaya_drochilnya
+package com.example.adskayadrochilnya
 
 import io.flutter.embedding.android.FlutterActivity
 
